@@ -62,6 +62,8 @@
       const playSounds = (e) => {
         const code = e.keyCode;
         const playCon = document.querySelector(`div[data-key="${code}"]`);
+        // 如果按了其他的键不进行处理
+        if (!playCon) return;
         const audio = document.querySelector(`audio[data-key="${code}"]`);
         playCon.classList.add("playing");
         audio.currentTime = 0;
@@ -69,6 +71,7 @@
       };
 
       const endAnimate = (e) => {
+        if (e.propertyName !== "transform") return;
         e.target.classList.remove("playing");
       };
       keys.forEach((key) => {
