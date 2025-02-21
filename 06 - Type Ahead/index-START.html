@@ -1,23 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Type Ahead 👀</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="icon" href="https://fav.farm/🔥" />
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Type Ahead 👀</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="icon" href="https://fav.farm/🔥" />
+  </head>
+  <body>
+    <form class="search-form">
+      <input type="text" class="search" placeholder="City or State" />
+      <ul class="suggestions">
+        <li>Filter for a city</li>
+        <li>or a state</li>
+      </ul>
+    </form>
+    <script>
+      const endpoint =
+        "https://gist.githubusercontent.com/Miserlou/c5cd8364bf9b2420bb29/raw/2bf258763cdddd704f8ffd3ea9a3e81d25e2c6f6/cities.json";
+      let city = [];
+      const suggestions = document.querySelector("ul");
+      const input = document.querySelector("input");
 
-  <form class="search-form">
-    <input type="text" class="search" placeholder="City or State">
-    <ul class="suggestions">
-      <li>Filter for a city</li>
-      <li>or a state</li>
-    </ul>
-  </form>
-<script>
-const endpoint = 'https://gist.githubusercontent.com/Miserlou/c5cd8364bf9b2420bb29/raw/2bf258763cdddd704f8ffd3ea9a3e81d25e2c6f6/cities.json';
+      const escapeRegExp = (string) => {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      };
 
-</script>
-</body>
+      const displayMatches = (e) => {
+        const matchArray = findMatches(e.target.value, city);
+        const fragment = document.createDocumentFragment();
+
+        matchArray.forEach((itemText) => {
+          const li = document.createElement("li");
+          const span = document.createElement("span");
+          span.className = "name";
+          span.innerHTML = itemText;
+          li.appendChild(span);
+          fragment.appendChild(li);
+        });
+
+        suggestions.innerHTML = "";
+        suggestions.appendChild(fragment);
+      };
+
+      function findMatches(wordToMatch, cities) {
+        if (!wordToMatch) return [];
+        const escapedWord = escapeRegExp(wordToMatch);
+        const regex = new RegExp(escapedWord, "i");
+
+        return cities
+          .filter((place) => {
+            // 同时匹配 city 或 state
+            return regex.test(place.city) || regex.test(place.state);
+          })
+          .map((matched) => {
+            // 对两个字段分别处理高亮
+            const city = matched.city.replace(
+              regex,
+              (match) => `<span class="hl">${match}</span>`
+            );
+            const state = matched.state.replace(
+              regex,
+              (match) => `<span class="hl">${match}</span>`
+            );
+            return `${city}, ${state}`; // 组合展示两个字段
+          });
+      }
+
+      input.addEventListener("input", displayMatches);
+
+      fetch(endpoint)
+        .then((blob) => blob.json())
+        .then((data) => {
+          console.log(data);
+
+          city = data.map((item) => {
+            return {
+              city: item.city.replace(/</g, "&lt;").replace(/>/g, "&gt;"),
+              state: item.state.replace(/</g, "&lt;").replace(/>/g, "&gt;"),
+            };
+          });
+        })
+        .catch((error) => {
+          console.error("Fetch error:", error);
+          suggestions.innerHTML = "<li>Error loading data</li>";
+        });
+    </script>
+  </body>
 </html>
